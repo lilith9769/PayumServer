@@ -1,153 +1,99 @@
+<h2 align="center">Supporting Payum</h2>
+
+Payum is an MIT-licensed open source project with its ongoing development made possible entirely by the support of community and our customers. If you'd like to join them, please consider:
+
+- [Become a sponsor](https://www.patreon.com/makasim)
+- [Become our client](http://forma-pro.com/)
+
+---
+
 # PayumServer.
+
+[![Join the chat at https://gitter.im/Payum/Payum](https://badges.gitter.im/Payum/Payum.svg)](https://gitter.im/Payum/Payum?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/Payum/PayumServer.png?branch=master)](https://travis-ci.org/Payum/PayumServer)
 [![Total Downloads](https://poser.pugx.org/payum/payum-server/d/total.png)](https://packagist.org/packages/payum/payum-server)
 [![Latest Stable Version](https://poser.pugx.org/payum/payum-server/version.png)](https://packagist.org/packages/payum/payum-server)
 
-PHP 5.3+ Payment micro service. Setup once and rule them all: Paypal, Stripe, Payex, Authorize.NET, Be2bill, Klarna, IPNs...
+PHP 7.1+ Payment processing server. Setup once and rule them all. [Here](https://medium.com/@maksim_ka2/your-personal-payment-processing-server-abcc8ed76804#.23mlps63n) you can find a good introduction to what it does and what problems it solves.
 
-## Installation
+## Try it online:
+
+* Demo: https://server.payum.forma-pro.com/demo.html
+* Backend: [https://server-ui.payum.forma-pro.com](https://server-ui.payum.forma-pro.com/#!/app/settings?api=https:%2F%2Fserver.payum.forma-pro.com)
+* Server: https://server.payum.forma-pro.com
+
+## Run local server
+
+Create docker-compose.yml file:
+
+```yaml
+version: '2'
+services:
+  payum-server:
+    image: payum/server
+    environment:
+      - PAYUM_MONGO_URI=mongodb://mongo:27017/payum_server
+      - PAYUM_DEBUG=1
+    links:
+      - mongo
+    ports:
+      - "8080:80"
+
+  mongo:
+    image: mongo
+```
+
+and run `docker-compose up`. You server will be at `localhost:8080` port.
+
+## Test local server
+1. Copy `.test.env.dist` to `.test.env`
+2. Run `bin/phpunit`
+
+## Docker registry
+
+The [payum/server](https://hub.docker.com/r/payum/server/) image and [payum/server-ui](https://hub.docker.com/r/payum/server-ui/) are built automatically on success push to the master branch.  
+
+## Setup & Run
 
 ```bash
 $ php composer.phar create-project payum/payum-server --stability=dev
+$ cd payum-server
+$ php -S 127.0.0.1:8000 web/app.php
 ```
 
-## Run
+An example on javascript:
 
-```bash
-$ php -S 127.0.0.1:8000 web/index.php
-```
-
-_**Note**: Never use built in web server on production. Set apache or nginx server._
-
-## Configure
-
-```bash
-$ curl -i -X POST -H "Content-Type: application/json" http://server.payum.forma-dev.com/api/configs/payments -d  '{"name": "barpaypal", "factory": "paypal", "options": {"username": "foo", "password": "bar", "signature": "baz", "sandbox": true}}'
-```
-
-_**Note**: You must provide correct Paypal credentials._
-
-## Create Order
- 
-First of all you have to create an order on the server. After, you have to redirect a payer to capture url:
-
-```bash
-$ curl -i -X POST -H "Content-Type: application/json" http://server.payum.forma-dev.com/api/orders -d  '{"paymentName": "barpaypal", "totalAmount": 123, "currenctCode": "USD"}'
-```
-
-As a response you have to get:
-```json
-{
-    "order": {
-        "clientEmail": null,
-        "clientId": null,
-        "currencyCode": null,
-        "totalAmount": 123
-        "details": [],
-        "number": "20141013-81843",
-        "payments": [
-            {
-                "status": "new",
-                "date": "2014-10-21T21:58:54+0200",
-                "name": "barpaypal",
-                "details": []
-            },
-            {
-                "status": "new",
-                "date": "2014-10-21T21:59:06+0200",
-                "name": "barpaypal",
-                "details": {
-                    "INVNUM": "20141021-36803",
-                    "PAYMENTREQUEST_0_CURRENCYCODE": "USD",
-                    "PAYMENTREQUEST_0_AMT": 1.23
-                }
-            },
-            {
-                "status": "new",
-                "date": "2014-10-21T21:59:08+0200",
-                "name": "barpaypal",
-                "details": {
-                    "INVNUM": "20141021-36803",
-                    "PAYMENTREQUEST_0_CURRENCYCODE": "USD",
-                    "PAYMENTREQUEST_0_AMT": 1.23,
-                    "PAYMENTREQUEST_0_PAYMENTACTION": "Sale",
-                    "RETURNURL": "http:\/\/192.168.80.80:8000\/capture\/1JlWkpdA0s4nCHqSAE3tHrHtlx94LiCuj5G27qcYhQU",
-                    "CANCELURL": "http:\/\/192.168.80.80:8000\/capture\/1JlWkpdA0s4nCHqSAE3tHrHtlx94LiCuj5G27qcYhQU",
-                    "TOKEN": "EC-4BH34851L07194223",
-                    "TIMESTAMP": "2014-10-21T19:59:08Z",
-                    "CORRELATIONID": "aaee2dd617056",
-                    "ACK": "Success",
-                    "VERSION": "65.1",
-                    "BUILD": "13443904"
-                }
-            }
-        ]
-    },
-    "_links": {
-        "authorize": "http://server.payum.forma-dev.com/authorize/urd3IGRnMsIiNNMiwqdKzOQFIAbIa-uR3XNAQ2573QA",
-        "capture": "http://server.payum.forma-dev.com/capture/gT5OofuBMQp_D4lxfSuM4ZNx9yjgYdXoK96yiTsKHOI",
-        "get": "http://server.payum.forma-dev.com/api/orders/FiZzVbBu5ob2l2x4bvMCKezFU6QyuZRZ7WHlo6PzRU4",
-        "notify": "http://server.payum.forma-dev.com/notify/VTc1D9U3Ab2AKBUp-kh9ycLf-Bbt608bxHyihYLuJGY"
-    },
-    "_tokens": {
-        "authorize": "urd3IGRnMsIiNNMiwqdKzOQFIAbIa-uR3XNAQ2573QA",
-        "capture": "gT5OofuBMQp_D4lxfSuM4ZNx9yjgYdXoK96yiTsKHOI",
-        "get": "FiZzVbBu5ob2l2x4bvMCKezFU6QyuZRZ7WHlo6PzRU4",
-        "notify": "VTc1D9U3Ab2AKBUp-kh9ycLf-Bbt608bxHyihYLuJGY"
-    }
-}
-```
-
-## Purchase
-
-Redirect user to capture url you get with order response, It should be something like this:
-
-```
-http://server.payum.forma-dev.com/capture/gT5OofuBMQp_D4lxfSuM4ZNx9yjgYdXoK96yiTsKHOI
-```
-
-## Tips
-
-* Find out which payment you can use:
-
-    ```bash
-    $ curl -i -X GET -H "Content-Type: application/json" http://server.payum.forma-dev.com/api/configs/payments'
-    ```
+```javascript
+  // do new payment
+  var payum = new Payum('http://localhost:8000');
     
-* Find out which payments you can configure:
+  var payment = {totalAmount: 100, currencyCode: 'USD'};
 
-    ```bash
-    $ curl -i -X GET -H "Content-Type: application/json" http://server.payum.forma-dev.com/api/configs/payments/meta'
-    ```
+  payum.payment.create(payment, function(payment) {
+    var token = {
+        type: 'capture',
+        paymentId: payment.id,
+        afterUrl: 'http://afterPaymentIsDoneUrl'
+    };
 
-* Find out which storage you can use:
+    payum.token.create(token, function(token) {
+      // do redirect to token.targetUrl or process at the same page like this:
+      payum.execute(token.targetUrl, '#payum-container');
+    });
+  });
+```
 
-    ```bash
-    $ curl -i -X GET -H "Content-Type: application/json" http://server.payum.forma-dev.com/api/configs/storages'
-    ```
-    
-* Find out which storages you can configure:
+_**Note**: You might need a [web client](https://github.com/Payum/PayumServerUI) to manage payments gateways or you can use REST API._
 
-    ```bash
-    $ curl -i -X GET -H "Content-Type: application/json" http://server.payum.forma-dev.com/api/configs/storages/meta'
-    ```
+[Site](https://payum.forma-pro.com/)
 
-* Try it [online](http://server.payum.forma-dev.com/)
+## Developed by Forma-Pro
 
-* Enabled debug mode to get pretty printed json:
+Forma-Pro is a full stack development company which interests also spread to open source development. 
+Being a team of strong professionals we have an aim an ability to help community by developing cutting edge solutions in the areas of e-commerce, docker & microservice oriented architecture where we have accumulated a huge many-years experience. 
+Our main specialization is Symfony framework based solution, but we are always looking to the technologies that allow us to do our job the best way. We are committed to creating solutions that revolutionize the way how things are developed in aspects of architecture & scalability.
 
-    ```bash
-    $ PAYUM_SERVER_DEBUG=1 php -S 127.0.0.1:8000 web/index.php
-    ```
-
-* Exceptions tracking
-
-    The server comes with built in support of [sentry](https://getsentry.com/welcome/) service. You just need to set a `SENTRY_DSN` environment (In Case you use apache add this `SetEnv SENTRY_DSN aDsn` to your vhost.):
-
-    ```bash
-    $ SENTRY_DSN=aDsn php -S 127.0.0.1:8000 web/index.php
-    ```
-
+If you have any questions and inquires about our open source development, this product particularly or any other matter feel free to contact at opensource@forma-pro.com
 ## License
 
 Code MIT [licensed](LICENSE.md).

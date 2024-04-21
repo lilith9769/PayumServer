@@ -1,16 +1,30 @@
 language: php
 
 php:
-  - 5.5
+  - 7.1
 
-env:
-  - MONGO_VERSION=1.3.4
+cache:
+  directories:
+    - $HOME/.composer
 
-services: mongodb
+services:
+  - mongodb
+  - docker
 
-before_script:
-  - pecl -q install -f mongo-${MONGO_VERSION} && echo "extension=mongo.so" >> `php --ini | grep "Loaded Configuration" | sed -e "s|.*:\s*||"`
-  - composer install --dev --no-interaction --prefer-source
+before_install:
+    - echo "extension = mongodb.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+    - cp .test.env.dist .test.env
+
+install:
+    - composer install
+
+script:
+    - bin/phpunit
+
+after_success:
+  - rm -rf vendor
+  - composer install --optimize-autoloader --classmap-authoritative --no-dev --no-suggest --prefer-dist
+  - BRANCH=$TRAVIS_BRANCH COMMIT=${TRAVIS_COMMIT::8} bin/build-docker-image
 
 notifications:
   email:
